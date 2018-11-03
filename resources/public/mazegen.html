@@ -1,0 +1,201 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap core CSS -->
+    <link href="./bootstrap-3.3.4-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="./syntaxhighlighter_3.0.83/styles/shCore.css" rel="stylesheet" type="text/css"/>
+    <link href="./syntaxhighlighter_3.0.83/styles/shThemeEmacs.css" rel="stylesheet" type="text/css" />
+</head>
+<body style="background-color: #fff;">
+<div class="jumbotron">
+    <div class="container">
+        <h1>Conway's Game of Life</h1>
+        <p>A Demonstration and Postmortem of a Clojure/ClojureScript Project</p>
+        <p>By Mark Bastian</p>
+        <a href="https://twitter.com/share" class="twitter-share-button" data-url="http://markbastian.github.io/conway/mazegen.html" data-via="mark_bastian" data-hashtags="clojure">Tweet</a> <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+        <a href="https://twitter.com/mark_bastian" class="twitter-follow-button" data-show-count="false">Follow @mark_bastian</a> <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+        <a href="https://twitter.com/intent/tweet?button_hashtag=clojure" class="twitter-hashtag-button" data-related="mark_bastian">Tweet #clojure</a> <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+    </div>
+</div>
+
+<div class="container">
+    <h1 class="cover-heading">Actually, please go <a href="http://fn-code.blogspot.com/2015/03/conways-game-of-life-demonstration-and.html">here</a> instead....</h1>
+    <p>I'm just getting started with the whole &quot;Share with the world&quot; concept and have decided it would be
+        better to present this in a blog format.</p>
+
+    <p>So, please, ignore everything you see below and go
+        <a href="http://fn-code.blogspot.com/2015/03/conways-game-of-life-demonstration-and.html">here</a> instead.
+        Same content, better format. For your troubles I promise to deliver more content in the future.</p>
+</div>
+
+<div class="container">
+    <h1 class="cover-heading">The Project</h1>
+    <p>I wanted to create an interesting project in Clojure that had the following features:
+    <ul>
+        <li>The project should be simple, but interesting</li>
+        <li>The project should demonstrate how Clojure, ClojureScript, and CLJX interact</li>
+        <li>There should be some cool Clojure features to learn about</li>
+        <li>I wanted to demonstrate how to achieve state in a stateless world</li>
+    </ul>
+    <p>I chose to program up Conway's Game of Life, a simple zero-player cellular automaton. It's a fun little simulation
+    and meets all of my criterion. Here's what it looks like:</p>
+</div>
+
+<div class="container">
+    <canvas id="myCanvas" width="400" height="400" style="border:1px solid #000000;"></canvas>
+</div>
+
+<div class="container">
+    <p class="lead">
+        <a href="#" id="reset" class="btn btn-lg btn-default">Reset</a>
+    </p>
+</div>
+
+<div class="container">
+    <h1 class="cover-heading">The Rules</h1>
+    <p>Conway's Game of Life is a cellular automaton in which a population of cells evolves with the
+        following rules:
+    <ul>
+    <li>A living cell with only one or two neighbors dies</li>
+    <li>A living cell with two or three live neighbors survives</li>
+    <li>A living cell with greater than three neighbors dies</li>
+    <li>A dead cell with exactly three neighbors comes to life</li>
+    </ul>
+</div>
+
+
+<div class="container">
+    <h1 class="cover-heading">Postmortem</h1>
+</div>
+
+<div class="container">
+    <h2 class="cover-heading">Implementation in Clojure</h2>
+    <p>This project was coded up in Clojure as an example of what can be done using the clj/cljs/cljx
+        integration. It was done in three main files: rules.cljx, swingui.clj, and canvasui.cljs. Below you will find
+    the complete listing of the rules and canvasui namespaces. the swingui namespace is available via git
+        <a href="https://github.com/markbastian/conway">here</a>.</p>
+</div>
+
+<div class="container">
+    <h3>rules.cljx</h3>
+    <p>Here's a listing of the entire &quot;rule engine&quot; for the application.</p>
+<pre class="brush: clj; ruler: false">
+(ns mazegen.rules)
+
+(defn gen-cell[](if (> (Math/random) 0.7) :alive :dead))
+
+(defn seed-grid [rows cols]
+  (vec (take rows (repeatedly (fn [] (vec (take cols (repeatedly gen-cell))))))))
+
+(defn neighbors [[i j]]
+  (let [x ((juxt inc inc identity dec dec dec identity inc) i)
+        y ((juxt identity inc inc inc identity dec dec dec) j)]
+    (map vector x y)))
+
+(defn count-neighbors [grid coord]
+  (let [n (map #(get-in grid %) (neighbors coord))]
+    (count (filter #(= % :alive) n))))
+
+(defn sim-step [grid coord]
+  (let [n-live (count-neighbors grid coord)]
+    (if (= :alive (get-in grid coord))
+      (case n-live
+        (2 3) :alive
+        :dead)
+      (if (= 3 n-live) :alive :dead))))
+
+(defn step [grid]
+  (into [] (for [i (range (count grid))]
+          (into [] (for [j (range (count (get grid i)))]
+                  (sim-step grid [i j]))))))
+</pre>
+    <p>Perhaps the most interesting aspect of this project is the amount of code (and I mean the small amount) written
+        to do this complete implementation. I am continually amazed as I write more Clojure about the expressiveness
+        and conciseness of the language. Another thing to point out about this file is the cljx extension. By using this, I
+        can write code that cross-compiles to target both the JVM and the browser via JavaScript. Pretty cool, eh?</p>
+
+    <p>Finally, I wanted to point out my favorite function in this program: juxt. the Clojure juxt function creates a
+        function that performs a sequence of operations on a single item and returns that result as an indexed data
+        structure. This is a perfect function for computing the neighbors of a cell in a grid. This is way better than
+        having 8 sequential function calls in which you compute steps to the right, upper right, top center, upper left,
+        and so on.</p>
+</div>
+
+<div class="container">
+    <h3>canvasui.cljx</h3>
+    <p>And here is the complete listing for the interface in HTML.</p>
+<pre class="brush: clj">
+(ns mazegen.canvasui
+  (:require [mazegen.rules :as rules]))
+
+(defn draw-background [canvas ctx]
+  (doto ctx
+    (-> .-fillStyle (set! "#000000"))
+    (.fillRect 0 0 (.-width canvas) (.-height canvas))))
+
+(defn draw-and-update-grid [canvas ctx grid dim]
+  (let [dx (/ (.-width canvas) dim)
+        dy (/ (.-height canvas) dim)]
+    (do
+    (draw-background canvas ctx)
+    (-> ctx .-fillStyle (set! "#00FF00"))
+    (doseq [i (range (count @grid))]
+      (doseq [j (range (count (get @grid i)))]
+        (when (= :alive (get-in @grid [i j]))
+          (.fillRect ctx (* dx i) (* dy j) dx dy))))
+    (swap! grid rules/step))))
+
+(set!
+  (.-onload js/window)
+  (when (and js/document (.-getElementById js/document))
+    (let [cells 50
+          grid (atom (rules/seed-grid cells cells))
+          canvas (.getElementById js/document "myCanvas")
+          reset-button (.getElementById js/document "reset")
+          ctx (.getContext canvas "2d")]
+      (do
+        (js/setInterval #(draw-and-update-grid canvas ctx grid cells) 10)
+        (set! (.-onclick reset-button) #(reset! grid (rules/seed-grid cells cells)))))))
+</pre>
+    <p>Again, it is amazing how few lines of code were written for this demo.</p>
+    <p>Finally, take a look at how state is managed in the program. Notice that there are no defs (global variables
+        within the namespace) anywhere. All of the state is managed by a single atom (line 25) that is created within the
+        initialization section of the script and is passed to each function. The draw-and-update-grid function draws and
+        updates the grid (as you might expect) while the reset button is used to reset the grid. Since atoms are
+        synchronous, I don't need to worry about any sort of concurrency problems. It just works.</p>
+    <p>This is a very common pattern in the Clojure world for designing applications. You have three elements:
+    <ol>
+        <li>A set of rules that can be thought of as an API or DSL for your project. These rules consist only of defns
+            or perhaps defs that define constants. They are used to transform or analyze a model. They are completely stateless.</li>
+        <li>A very small number of Clojure concurrency primitives that manage the actual state of the application. In
+            this case, there is only 1 - the grid atom. You might have other primitives, such as one for preferences, but
+            the number should be small and separated by concerns.</li>
+        <li>A user interface layer. It could be Swing, an HTML app using ClojureScript, or just a repl.</li>
+    </ol><p>
+    Coming from a background in 10+ years of Java and then about 6 years of Scala, this
+    was something it took me a while to understand, but now I can't live without. When I got deep into Scala I really
+    loved it, but had the hardest time figuring out how to manage state. With Clojure everything is just baked in.</p>
+</div>
+
+<div class="container">
+    <h1 class="cover-heading">In Conclusion</h1>
+    <p>I was able to write up a simple cross-platform application in just a handful of lines of code using the amazing
+        powers of Clojure, ClojureScript, and the cljx project. Despite its simplicity, there are some great things to learn
+        from the project. If you want to see the entire project, check it out
+        <a href="https://github.com/markbastian/conway">here</a> or my entire github repo
+        <a href="https://github.com/markbastian">here</a>. I hope you enjoyed this project and short postmortem.</p>
+
+    <p>If you liked this page or learned anything from it, please tweet the link and/or follow me on Twitter. I hope to
+    have other projects like this in the future, and your support and interest is the fuel that drives the effort.</p>
+</div>
+
+<script src="js/mazegen.js"></script>
+<script src="./syntaxhighlighter_3.0.83/scripts/shCore.js"></script>
+<script type="text/javascript" src="./syntaxhighlighter_3.0.83/scripts/shBrushClojure.js"></script>
+<script src="./bootstrap-3.3.4-dist/js/bootstrap.min.js"></script>
+<script type="text/javascript">
+     SyntaxHighlighter.all()
+</script>
+</body>
+</html> 
