@@ -102,6 +102,8 @@
 
 (dijkstra-path neighbors-8 dist [0 0] [5 5])
 
+;Next step is https://www.redblobgames.com/pathfinding/a-star/introduction.html#greedy-best-first
+
 (prn (bfs [0 0] [5 5] neighbors))
 
 (def meadow-32x32x4
