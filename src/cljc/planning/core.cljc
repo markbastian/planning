@@ -5,7 +5,8 @@
             #?(:clj  [clojure.data.priority-map :refer
                       [priority-map priority-map-by]]
                :cljs [tailrecursion.priority-map :refer
-                      [priority-map priority-map-by]])))
+                      [priority-map priority-map-by]])
+            [clojure.pprint :as pp]))
 
 (defn neighbors [[x y]]
   (let [i ((juxt inc identity dec identity) x)
@@ -42,8 +43,8 @@
 (defn recover-path [goal visited]
   (vec (reverse (take-while some? (iterate visited goal)))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn expand-search [neighbors {:keys [frontier visited] :as m}]
+;Breadth first search
+(defn search-step [neighbors {:keys [frontier visited] :as m}]
   (let [next-state (peek frontier)
         new-neighbors (remove #(contains? visited %) (neighbors next-state))]
     (-> m
@@ -52,7 +53,7 @@
 
 (defn search-seq [q start neighbors]
   (->> {:frontier (conj q start) :visited {start nil}}
-       (iterate (partial expand-search neighbors))
+       (iterate (partial search-step neighbors))
        (take-while (comp seq :frontier))))
 
 (defn iterative-search [q start goal neighbors]
@@ -63,18 +64,19 @@
 (def breadth-first-search (partial iterative-search empty-queue))
 (def depth-first-search (partial iterative-search []))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Dijkstra's algorithm
 (defn dijkstra-step [neighbors cost-fn {:keys [frontier cost] :as m}]
-  (let [[next-state cst] (peek frontier)
-        costs (->> next-state
-                   neighbors
-                   (map (fn [n] [n (+ cst (cost-fn next-state n))]))
-                   (remove (fn [[n c]] (when-let [cc (cost n)] (>= c cc))))
+  (let [[current-state current-cost] (peek frontier)
+        costs (->> (neighbors current-state)
+                   (map (fn [next-state] [next-state (+ current-cost (cost-fn current-state next-state))]))
+                   (remove (fn [[next-state next-cost]]
+                             (when-let [existing-cost (cost next-state)]
+                               (>= next-cost existing-cost))))
                    (apply conj {}))]
     (-> m
         (update :frontier #(-> % pop (into costs)))
         (update :cost into costs)
-        (update :visited into (zipmap (keys costs) (repeat next-state))))))
+        (update :visited into (zipmap (keys costs) (repeat current-state))))))
 
 (defn dijkstra-seq [neighbors cost-fn start]
   (->> {:frontier (priority-map start 0) :cost {start 0} :visited {start nil}}
@@ -86,25 +88,57 @@
        (some (fn [{:keys [visited]}] (when (visited goal) visited)))
        (recover-path goal)))
 
+;Greedy best first search
+(defn greedy-bfs-step [neighbors heuristic {:keys [frontier visited] :as m}]
+  (let [[current-state _] (peek frontier)
+        new-neighbors (remove #(contains? visited %) (neighbors current-state))]
+    (-> m
+        (update :frontier #(-> % pop (into (for [n new-neighbors] [n (heuristic n)]))))
+        (update :visited into (zipmap new-neighbors (repeat current-state))))))
+
+(defn greedy-bfs-seq [neighbors heuristic start]
+  (->> {:frontier (priority-map start 0) :visited {start nil}}
+       (iterate (partial greedy-bfs-step neighbors heuristic))
+       (take-while (comp seq :frontier))))
+
+(defn greedy-bfs-search [neighbors heuristic start goal]
+  (some->> (greedy-bfs-seq neighbors (partial heuristic goal) start)
+           (some (fn [{:keys [visited]}] (when (visited goal) visited)))
+           (recover-path goal)))
+
 (def height-map
-  [[1 1 1 1 1 1]
-   [1 1 2 2 2 1]
-   [1 1 5 5 2 1]
-   [1 1 5 5 2 1]
-   [1 1 2 2 2 1]
-   [1 1 1 1 1 1]])
+  '[[1 1 1 1 1 1]
+    [1 1 0 0 0 1]
+    [1 1 1 1 0 1]
+    [1 1 1 1 0 1]
+    [1 0 0 0 0 1]
+    [1 1 1 1 1 1]])
 
-(dijkstra-path
-  (fn [a] (filter (partial get-in height-map) (neighbors a)))
-  (fn [a b] (Math/abs (- (get-in height-map a) (get-in height-map b))))
+(defn mark-path [grid solution]
+  (reduce (fn [g c] (assoc-in g c 'X)) grid solution))
+
+(pp/pprint
+  (mark-path
+  height-map
+  (greedy-bfs-search
+  (fn [a] (filter #(some->> % (get-in height-map) pos?) (neighbors-8 a)))
+  dist
   [0 0]
-  [5 5])
+  [5 5])))
 
-(dijkstra-path neighbors-8 dist [0 0] [5 5])
+(pp/pprint
+  (mark-path
+    height-map
+    [[0 0] [1 1] [2 2] [3 3] [2 3] [3 2] [3 1] [2 1] [4 0] [5 1] [5 2] [5 3] [5 4] [5 5]]))
+
+(pp/pprint
+  (mark-path
+    height-map
+    [[0 0] [1 1] [2 2] [3 1] [4 0] [5 1] [5 2] [5 3] [5 4] [5 5]]))
 
 ;Next step is https://www.redblobgames.com/pathfinding/a-star/introduction.html#greedy-best-first
 
-(prn (bfs [0 0] [5 5] neighbors))
+
 
 (def meadow-32x32x4
   ["################################"
