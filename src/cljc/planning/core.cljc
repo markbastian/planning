@@ -18,9 +18,15 @@
         j ((juxt identity inc inc inc identity dec dec dec) y)]
     (map vector i j)))
 
-(defn dist [a b]
+(defn euclidian-distance [a b]
   (let [u (map - a b)]
     (Math/sqrt (reduce + (map * u u)))))
+
+(defn manhattan-distance [a b]
+  (reduce + (map (comp #(Math/abs %) -) a b)))
+
+(defn mark-path [grid solution]
+  (reduce (fn [g c] (assoc-in g c 'X)) grid solution))
 
 (def empty-queue #?(:clj  (clojure.lang.PersistentQueue/EMPTY)
                     :cljs (cljs.core.PersistentQueue/EMPTY)))
@@ -64,19 +70,21 @@
 (def breadth-first-search (partial iterative-search empty-queue))
 (def depth-first-search (partial iterative-search []))
 
+(defn compute-costs [current-state neighbors-fn current-costs cost-fn]
+  (for [neighbor (neighbors-fn current-state)
+        :let [new-cost (+ (current-costs current-state) (cost-fn current-state neighbor))
+              existing-cost (current-costs neighbor)]
+        :when (or (nil? existing-cost) (< new-cost existing-cost))]
+    [neighbor new-cost]))
+
 ;Dijkstra's algorithm
 (defn dijkstra-step [neighbors cost-fn {:keys [frontier cost] :as m}]
-  (let [[current-state current-cost] (peek frontier)
-        costs (->> (neighbors current-state)
-                   (map (fn [next-state] [next-state (+ current-cost (cost-fn current-state next-state))]))
-                   (remove (fn [[next-state next-cost]]
-                             (when-let [existing-cost (cost next-state)]
-                               (>= next-cost existing-cost))))
-                   (apply conj {}))]
+  (let [[current-state] (peek frontier)
+        costs (compute-costs current-state neighbors cost cost-fn)]
     (-> m
         (update :frontier #(-> % pop (into costs)))
         (update :cost into costs)
-        (update :visited into (zipmap (keys costs) (repeat current-state))))))
+        (update :visited into (map (fn [[c]] [c current-state]) costs)))))
 
 (defn dijkstra-seq [neighbors cost-fn start]
   (->> {:frontier (priority-map start 0) :cost {start 0} :visited {start nil}}
@@ -106,6 +114,26 @@
            (some (fn [{:keys [visited]}] (when (visited goal) visited)))
            (recover-path goal)))
 
+;A* algorithm
+(defn A*-step [neighbors cost-fn heuristic {:keys [frontier cost] :as m}]
+  (let [[current-state] (peek frontier)
+        costs (compute-costs current-state neighbors cost cost-fn)
+        estimates (map (fn [[s c]] [s (+ c (heuristic s))]) costs)]
+    (-> m
+        (update :frontier #(-> % pop (into estimates)))
+        (update :cost into costs)
+        (update :visited into (map (fn [[c]] [c current-state]) costs)))))
+
+(defn A*-seq [neighbors cost-fn heuristic start]
+  (->> {:frontier (priority-map start 0) :cost {start 0} :visited {start nil}}
+       (iterate (partial A*-step neighbors cost-fn heuristic))
+       (take-while (comp seq :frontier))))
+
+(defn A*-search [neighbors cost-fn heuristic start goal]
+  (some->> (A*-seq neighbors cost-fn (partial heuristic goal) start)
+           (some (fn [{:keys [visited]}] (when (visited goal) visited)))
+           (recover-path goal)))
+
 (def height-map
   '[[1 1 1 1 1 1]
     [1 1 0 0 0 1]
@@ -114,27 +142,52 @@
     [1 0 0 0 0 1]
     [1 1 1 1 1 1]])
 
-(defn mark-path [grid solution]
-  (reduce (fn [g c] (assoc-in g c 'X)) grid solution))
+(->>
+  (dijkstra-seq
+    (fn [a] (filter (fn [c] (when-some [h (get-in height-map c)] (pos? h))) (neighbors-8 a)))
+    euclidian-distance
+    [0 0])
+  (map (comp first :frontier))
+  (take 40))
 
-(pp/pprint
-  (mark-path
-  height-map
-  (greedy-bfs-search
-  (fn [a] (filter #(some->> % (get-in height-map) pos?) (neighbors-8 a)))
-  dist
-  [0 0]
-  [5 5])))
+(time
+  (pp/pprint
+    (mark-path
+      height-map
+      (dijkstra-path
+        (fn [a] (filter (fn [c] (when-some [h (get-in height-map c)] (pos? h))) (neighbors-8 a)))
+        euclidian-distance
+        [0 0]
+        [5 5]))))
+
+(->>
+  (A*-seq
+    (fn [a] (filter (fn [c] (when-some [h (get-in height-map c)] (pos? h))) (neighbors-8 a)))
+    euclidian-distance
+    (partial euclidian-distance [5 5])
+    [0 0])
+  (map (comp first :frontier))
+  (take 23))
+
+(time
+  (pp/pprint
+    (mark-path
+      height-map
+      (A*-search
+        (fn [a] (filter (fn [c] (when-some [h (get-in height-map c)] (pos? h))) (neighbors-8 a)))
+        euclidian-distance
+        euclidian-distance
+        [0 0]
+        [5 5]))))
 
 (pp/pprint
   (mark-path
     height-map
-    [[0 0] [1 1] [2 2] [3 3] [2 3] [3 2] [3 1] [2 1] [4 0] [5 1] [5 2] [5 3] [5 4] [5 5]]))
-
-(pp/pprint
-  (mark-path
-    height-map
-    [[0 0] [1 1] [2 2] [3 1] [4 0] [5 1] [5 2] [5 3] [5 4] [5 5]]))
+    (greedy-bfs-search
+      (fn [a] (filter (fn [c] (when-some [h (get-in height-map c)] (pos? h))) (neighbors-8 a)))
+      euclidian-distance
+      [0 0]
+      [5 5])))
 
 ;Next step is https://www.redblobgames.com/pathfinding/a-star/introduction.html#greedy-best-first
 
@@ -174,13 +227,48 @@
    "###########    #################"
    "############  ##################"])
 
-
 (defn add-path [text-map path]
   (->> path
        (reduce
          (fn [g c] (assoc-in g c "X"))
          (mapv vec text-map))
        (mapv cs/join)))
+
+(time
+  (pp/pprint
+    (add-path
+      meadow-32x32x4
+      (A*-search
+        (fn [a] (filter (fn [c] (= "#" (str (get-in meadow-32x32x4 c)))) (neighbors-8 a)))
+        euclidian-distance
+        euclidian-distance
+        [4 20]
+        [31 11]))))
+
+(time
+  (A*-search
+    (fn [a] (filter (fn [c] (= "#" (str (get-in meadow-32x32x4 c)))) (neighbors-8 a)))
+    euclidian-distance
+    euclidian-distance
+    [4 20]
+    [31 11]))
+
+(time
+  (pp/pprint
+    (add-path
+      meadow-32x32x4
+      (dijkstra-path
+        (fn [a] (filter (fn [c] (= "#" (str (get-in meadow-32x32x4 c)))) (neighbors-8 a)))
+        euclidian-distance
+        [4 20]
+        [31 11]))))
+
+(time
+  (dijkstra-path
+    (fn [a] (filter (fn [c] (= "#" (str (get-in meadow-32x32x4 c)))) (neighbors-8 a)))
+    euclidian-distance
+    [4 20]
+    [31 11]))
 
 (add-path meadow-32x32x4 (breadth-first-search
                            [7 5]

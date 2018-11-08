@@ -10,9 +10,6 @@
    [1 2 2 2 2 1]
    [1 1 1 1 1 1]])
 
-(defn mark-path [grid solution]
-  (reduce (fn [g c] (assoc-in g c 'X)) grid solution))
-
 (deftest test-dijkstra-path-with-height-delta-cost
   (testing "Dijkstra's algorithm with a cost function of absolute difference in cell heights."
     (let [solution (p/dijkstra-path
@@ -27,13 +24,13 @@
                [X 1 5 5 2 1]
                [X 2 2 2 2 1]
                [X X X X X X]]
-             (mark-path height-map solution))))))
+             (p/mark-path height-map solution))))))
 
 (deftest test-dijkstra-path-with-diagonal-delta-cost
   (testing "Dijkstra's algorithm with a cost function that takes into account the added distance of diagonal moves."
     (let [solution (p/dijkstra-path
                      (fn [a] (filter (partial get-in p/height-map) (p/neighbors-8 a)))
-                     p/dist
+                     p/euclidian-distance
                      [0 0]
                      [5 5])]
       (is (= [[0 0] [1 1] [2 2] [3 3] [4 4] [5 5]] solution))
@@ -43,13 +40,13 @@
                [1 1 5 X 2 1]
                [1 2 2 2 X 1]
                [1 1 1 1 1 X]]
-             (mark-path height-map solution))))))
+             (p/mark-path height-map solution))))))
 
 (deftest test-greedy-bfs
   (testing "Greedy BFS with diagonal moves"
     (let [solution (p/greedy-bfs-search
                      (fn [a] (filter (partial get-in p/height-map) (p/neighbors-8 a)))
-                     p/dist
+                     p/euclidian-distance
                      [0 0]
                      [5 5])]
       (is (= [[0 0] [1 1] [2 2] [3 3] [4 4] [5 5]] solution)))))
