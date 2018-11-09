@@ -46,8 +46,18 @@
 (def dfs (partial search []))
 (def bfs (partial search empty-queue))
 
+;;Helper functions
+(defn exhaust-search [search-seq]
+  (take-while (comp seq :frontier) search-seq))
+
+(defn goal-met [goal goal-steps]
+  (some (fn [{:keys [visited]}] (when (visited goal) visited)) goal-steps))
+
 (defn recover-path [goal visited]
   (vec (reverse (take-while some? (iterate visited goal)))))
+
+(defn search [goal search-seq]
+  (some->> search-seq (goal-met goal) (recover-path goal)))
 
 ;Breadth first search
 (defn search-step [neighbors {:keys [frontier visited] :as m}]
@@ -57,15 +67,13 @@
         (update :frontier #(-> % pop (into new-neighbors)))
         (update :visited into (zipmap new-neighbors (repeat next-state))))))
 
-(defn search-seq [q start neighbors]
+(defn search-seq [q neighbors start]
   (->> {:frontier (conj q start) :visited {start nil}}
        (iterate (partial search-step neighbors))
-       (take-while (comp seq :frontier))))
+       exhaust-search))
 
-(defn iterative-search [q start goal neighbors]
-  (some->> (search-seq q start neighbors)
-           (some (fn [{:keys [visited]}] (when (visited goal) visited)))
-           (recover-path goal)))
+(defn iterative-search [q neighbors start goal]
+  (search goal (search-seq q neighbors start)))
 
 (def breadth-first-search (partial iterative-search empty-queue))
 (def depth-first-search (partial iterative-search []))
@@ -89,190 +97,41 @@
 (defn dijkstra-seq [neighbors cost-fn start]
   (->> {:frontier (priority-map start 0) :cost {start 0} :visited {start nil}}
        (iterate (partial dijkstra-step neighbors cost-fn))
-       (take-while (comp seq :frontier))))
+       exhaust-search))
 
 (defn dijkstra-path [neighbors cost-fn start goal]
-  (->> (dijkstra-seq neighbors cost-fn start)
-       (some (fn [{:keys [visited]}] (when (visited goal) visited)))
-       (recover-path goal)))
+  (search goal (dijkstra-seq neighbors cost-fn start)))
 
 ;Greedy best first search
-(defn greedy-bfs-step [neighbors heuristic {:keys [frontier visited] :as m}]
+(defn greedy-bfs-step [neighbors heuristic goal {:keys [frontier visited] :as m}]
   (let [[current-state _] (peek frontier)
         new-neighbors (remove #(contains? visited %) (neighbors current-state))]
     (-> m
-        (update :frontier #(-> % pop (into (for [n new-neighbors] [n (heuristic n)]))))
+        (update :frontier #(-> % pop (into (for [n new-neighbors] [n (heuristic goal n)]))))
         (update :visited into (zipmap new-neighbors (repeat current-state))))))
 
-(defn greedy-bfs-seq [neighbors heuristic start]
+(defn greedy-bfs-seq [neighbors heuristic start goal]
   (->> {:frontier (priority-map start 0) :visited {start nil}}
-       (iterate (partial greedy-bfs-step neighbors heuristic))
-       (take-while (comp seq :frontier))))
+       (iterate (partial greedy-bfs-step neighbors heuristic goal))
+       exhaust-search))
 
 (defn greedy-bfs-search [neighbors heuristic start goal]
-  (some->> (greedy-bfs-seq neighbors (partial heuristic goal) start)
-           (some (fn [{:keys [visited]}] (when (visited goal) visited)))
-           (recover-path goal)))
+  (search goal (greedy-bfs-seq neighbors heuristic start goal)))
 
 ;A* algorithm
-(defn A*-step [neighbors cost-fn heuristic {:keys [frontier cost] :as m}]
+(defn A*-step [neighbors cost-fn heuristic goal {:keys [frontier cost] :as m}]
   (let [[current-state] (peek frontier)
         costs (compute-costs current-state neighbors cost cost-fn)
-        estimates (map (fn [[s c]] [s (+ c (heuristic s))]) costs)]
+        estimates (map (fn [[s c]] [s (+ c (heuristic goal s))]) costs)]
     (-> m
         (update :frontier #(-> % pop (into estimates)))
         (update :cost into costs)
         (update :visited into (map (fn [[c]] [c current-state]) costs)))))
 
-(defn A*-seq [neighbors cost-fn heuristic start]
+(defn A*-seq [neighbors cost-fn heuristic start goal]
   (->> {:frontier (priority-map start 0) :cost {start 0} :visited {start nil}}
-       (iterate (partial A*-step neighbors cost-fn heuristic))
-       (take-while (comp seq :frontier))))
+       (iterate (partial A*-step neighbors cost-fn heuristic goal))
+       exhaust-search))
 
 (defn A*-search [neighbors cost-fn heuristic start goal]
-  (some->> (A*-seq neighbors cost-fn (partial heuristic goal) start)
-           (some (fn [{:keys [visited]}] (when (visited goal) visited)))
-           (recover-path goal)))
-
-(def height-map
-  '[[1 1 1 1 1 1]
-    [1 1 0 0 0 1]
-    [1 1 1 1 0 1]
-    [1 1 1 1 0 1]
-    [1 0 0 0 0 1]
-    [1 1 1 1 1 1]])
-
-(->>
-  (dijkstra-seq
-    (fn [a] (filter (fn [c] (when-some [h (get-in height-map c)] (pos? h))) (neighbors-8 a)))
-    euclidian-distance
-    [0 0])
-  (map (comp first :frontier))
-  (take 40))
-
-(time
-  (pp/pprint
-    (mark-path
-      height-map
-      (dijkstra-path
-        (fn [a] (filter (fn [c] (when-some [h (get-in height-map c)] (pos? h))) (neighbors-8 a)))
-        euclidian-distance
-        [0 0]
-        [5 5]))))
-
-(->>
-  (A*-seq
-    (fn [a] (filter (fn [c] (when-some [h (get-in height-map c)] (pos? h))) (neighbors-8 a)))
-    euclidian-distance
-    (partial euclidian-distance [5 5])
-    [0 0])
-  (map (comp first :frontier))
-  (take 23))
-
-(time
-  (pp/pprint
-    (mark-path
-      height-map
-      (A*-search
-        (fn [a] (filter (fn [c] (when-some [h (get-in height-map c)] (pos? h))) (neighbors-8 a)))
-        euclidian-distance
-        euclidian-distance
-        [0 0]
-        [5 5]))))
-
-(pp/pprint
-  (mark-path
-    height-map
-    (greedy-bfs-search
-      (fn [a] (filter (fn [c] (when-some [h (get-in height-map c)] (pos? h))) (neighbors-8 a)))
-      euclidian-distance
-      [0 0]
-      [5 5])))
-
-;Next step is https://www.redblobgames.com/pathfinding/a-star/introduction.html#greedy-best-first
-
-
-
-(def meadow-32x32x4
-  ["################################"
-   "#######################     ####"
-   "######################       ###"
-   "#####################        ###"
-   "##################     ###  ####"
-   "#################     ##########"
-   "#################     ##########"
-   "#################     ##########"
-   "#####  ##########    ###########"
-   "####    ##########  ############"
-   "###      #######################"
-   "###      #######################"
-   "####    ########################"
-   "################################"
-   "################################"
-   "################################"
-   "################################"
-   "################################"
-   "########   #####################"
-   "#######     ####################"
-   "#######     ####################"
-   "#######    #####################"
-   "########  ######################"
-   "################################"
-   "################################"
-   "##########   ###################"
-   "#########     ##################"
-   "#########     ##################"
-   "##########    ##################"
-   "###########    #################"
-   "###########    #################"
-   "############  ##################"])
-
-(defn add-path [text-map path]
-  (->> path
-       (reduce
-         (fn [g c] (assoc-in g c "X"))
-         (mapv vec text-map))
-       (mapv cs/join)))
-
-(time
-  (pp/pprint
-    (add-path
-      meadow-32x32x4
-      (A*-search
-        (fn [a] (filter (fn [c] (= "#" (str (get-in meadow-32x32x4 c)))) (neighbors-8 a)))
-        euclidian-distance
-        euclidian-distance
-        [4 20]
-        [31 11]))))
-
-(time
-  (A*-search
-    (fn [a] (filter (fn [c] (= "#" (str (get-in meadow-32x32x4 c)))) (neighbors-8 a)))
-    euclidian-distance
-    euclidian-distance
-    [4 20]
-    [31 11]))
-
-(time
-  (pp/pprint
-    (add-path
-      meadow-32x32x4
-      (dijkstra-path
-        (fn [a] (filter (fn [c] (= "#" (str (get-in meadow-32x32x4 c)))) (neighbors-8 a)))
-        euclidian-distance
-        [4 20]
-        [31 11]))))
-
-(time
-  (dijkstra-path
-    (fn [a] (filter (fn [c] (= "#" (str (get-in meadow-32x32x4 c)))) (neighbors-8 a)))
-    euclidian-distance
-    [4 20]
-    [31 11]))
-
-(add-path meadow-32x32x4 (breadth-first-search
-                           [7 5]
-                           [31 31]
-                           (fn [c]
-                             (let [n (neighbors c)]
-                               (filter #(= \# (get-in meadow-32x32x4 %)) n)))))
+  (search goal (A*-seq neighbors cost-fn heuristic start goal)))
