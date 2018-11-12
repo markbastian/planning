@@ -57,33 +57,33 @@
     ))
 
 (->>
-  (A*-meadow-search [4 20] [31 11])
+  (A*-meadow-search {:start [4 20] :goal [31 11]})
   (add-path meadow-32x32x4))
 
 (->>
-  (dijkstra-meadow-search [4 20] [31 11])
+  (dijkstra-meadow-search {:start [4 20] :goal [31 11]})
   (add-path meadow-32x32x4))
 
 (->>
-  (greedy-meadow-search [4 20] [31 11])
+  (greedy-meadow-search {:start [4 20] :goal [31 11]})
   (add-path meadow-32x32x4))
 
 (->>
-  (bfs-meadow-search [4 20]  [31 11])
+  (bfs-meadow-search {:start [4 20] :goal [31 11]})
   (add-path meadow-32x32x4))
 
 (->>
-  (A*-meadow-search [8 0] [31 31])
+  (A*-meadow-search {:start [8 0] :goal [31 31]})
   (add-path meadow-32x32x4))
 
 (->>
-  (dijkstra-meadow-search [8 0] [31 31])
+  (dijkstra-meadow-search {:start [8 0] :goal [31 31]})
   (add-path meadow-32x32x4))
 
 (->>
-  (greedy-meadow-search [8 0] [31 31])
+  (greedy-meadow-search {:start [8 0] :goal [31 31]})
   (add-path meadow-32x32x4))
 
 (->>
-  (bfs-meadow-search [8 0] [31 31])
+  (bfs-meadow-search {:start [8 0] :goal [31 31]})
   (add-path meadow-32x32x4))

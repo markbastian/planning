@@ -23,8 +23,7 @@
     (let [solution (p/dijkstra-path
                      (fn [a] (filter (partial get-in height-map) (p/neighbors a)))
                      (fn [a b] (inc (Math/abs (double (- (get-in height-map a) (get-in height-map b))))))
-                     [0 0]
-                     [5 5])]
+                     {:start [0 0] :goal [5 5]})]
       (is (= [[0 0] [1 0] [2 0] [3 0] [4 0] [5 0] [5 1] [5 2] [5 3] [5 4] [5 5]] solution))
       (is (= '[[X 1 1 1 2 1]
                [X 1 2 2 2 1]
@@ -39,8 +38,7 @@
     (let [solution (p/dijkstra-path
                      (fn [a] (filter (partial get-in height-map) (p/neighbors-8 a)))
                      p/euclidian-distance
-                     [0 0]
-                     [5 5])]
+                     {:start [0 0] :goal [5 5]})]
       (is (= [[0 0] [1 1] [2 2] [3 3] [4 4] [5 5]] solution))
       (is (= '[[X 1 1 1 2 1]
                [1 X 2 2 2 1]
@@ -55,8 +53,7 @@
     (let [solution (p/greedy-bfs-search
                      (fn [a] (filter (partial get-in height-map) (p/neighbors-8 a)))
                      p/euclidian-distance
-                     [0 0]
-                     [5 5])]
+                     {:start [0 0] :goal [5 5]})]
       (is (= [[0 0] [1 1] [2 2] [3 3] [4 4] [5 5]] solution)))))
 
 (defn barrier-neighbors [c]
@@ -67,8 +64,7 @@
     (let [solution (p/dijkstra-path
                      barrier-neighbors
                      p/euclidian-distance
-                     [0 0]
-                     [5 5])]
+                     {:start [0 0] :goal [5 5]})]
       (is (= [[0 0] [1 0] [2 0] [3 0] [4 0] [5 1] [5 2] [5 3] [5 4] [5 5]] solution))
       (is (= '[[X 1 1 1 1 1]
                [X 1 0 0 0 1]
@@ -83,8 +79,7 @@
     (let [solution (p/greedy-bfs-search
                      barrier-neighbors
                      p/euclidian-distance
-                     [0 0]
-                     [5 5])]
+                     {:start [0 0] :goal [5 5]})]
       (is (= [[0 0] [1 1] [2 2] [3 1] [4 0] [5 1] [5 2] [5 3] [5 4] [5 5]] solution))
       (is (= '[[X 1 1 1 1 1]
                [1 X 0 0 0 1]
