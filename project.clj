@@ -3,26 +3,42 @@
   :description "A planning library"
   :url "https://github.com/markbastian/planning"
   :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+            :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.9.0"]
-                 [org.clojure/clojurescript "1.9.229"]
                  [org.clojure/data.priority-map "0.0.10"]
-                 [quil "2.4.0"]]
+                 ;For Java module system compatibility
+                 [javax.xml.bind/jaxb-api "2.4.0-b180830.0359"]]
 
   :jar-exclusions [#"\.swp|\.swo|\.DS_Store"]
+
   :profiles {:uberjar {:aot :all}
-             :dev {:plugins [[lein-cljsbuild "1.1.4"]
-                             [org.clojure/clojurescript "1.9.229"]]}
-             :cljs {:plugins [[lein-cljsbuild "1.1.4"]] }}
+             :dev     {:plugins      [[lein-figwheel "0.5.17"]
+                                      [lein-cljsbuild "1.1.7"]
+                                      [org.clojure/clojurescript "1.10.439"]]
+                       :dependencies [[cider/piggieback "0.3.10"]
+                                      [figwheel-sidecar "0.5.17"]]
+                       :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}}
+             :cljs    {:plugins      [[lein-cljsbuild "1.1.7"]]
+                       :dependencies [[org.clojure/clojurescript "1.10.439"]
+                                      [tailrecursion/cljs-priority-map "1.2.1"]
+                                      [reagent "0.8.1"]]}}
 
-  :source-paths ["src/clj" "src/cljc"]
-
-  :clj {:builds [{ :source-paths ["src/clj" "src/cljc" "test"] }]}
+  :source-paths ["src/main/clj" "src/main/cljc"]
+  :test-paths ["src/test/clj" "src/test/cljc"]
 
   :repl-options {:init-ns planning.core}
 
-  :cljsbuild {:builds [{ :source-paths ["src/cljs" "src/cljc"]
-                        :dependencies [[tailrecursion/cljs-priority-map "1.2.1"]]
-                        :compiler { :output-to "resources/public/js/planning.js"
-                                   :optimizations :advanced
-                                   :pretty-print true}}]})
+  :cljsbuild {:builds
+              {:dev {:source-paths ["src/main/cljs" "src/main/cljc"]
+                     :compiler     {:main         planning.app
+                                    :asset-path   "js/out"
+                                    :output-to    "resources/public/js/planning.js"
+                                    :output-dir   "resources/public/js/out"
+                                    :source-map-timestamp true
+                                    :pretty-print true}}
+               :min {:source-paths ["src/main/cljs" "src/main/cljc"]
+                     :compiler     {:main          planning.app
+                                    :output-to     "resources/public/js/planning.js"
+                                    :optimizations :advanced
+                                    :pretty-print  false}}}}
+  :figwheel {:css-dirs ["resources/public/css"]})

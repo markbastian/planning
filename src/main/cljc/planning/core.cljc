@@ -4,45 +4,10 @@
             #?(:clj  [clojure.data.priority-map :refer [priority-map]]
                :cljs [tailrecursion.priority-map :refer [priority-map]])))
 
-(defn neighbors [[x y]]
-  (let [i ((juxt inc identity dec identity) x)
-        j ((juxt identity inc identity dec) y)]
-    (map vector i j)))
-
-(defn neighbors-8 [[x y]]
-  (let [i ((juxt inc inc identity dec dec dec identity inc) x)
-        j ((juxt identity inc inc inc identity dec dec dec) y)]
-    (map vector i j)))
-
-(defn euclidian-distance [a b]
-  (let [u (map - a b)]
-    (Math/sqrt (reduce + (map * u u)))))
-
-(defn manhattan-distance [a b]
-  (reduce + (map (comp #(Math/abs %) -) a b)))
-
-(defn mark-path [grid solution]
-  (reduce (fn [g c] (assoc-in g c 'X)) grid solution))
-
 (def empty-queue #?(:clj  (clojure.lang.PersistentQueue/EMPTY)
                     :cljs (cljs.core.PersistentQueue/EMPTY)))
 
-(def infinity #?(:clj Double/POSITIVE_INFINITY, :cljs Number/POSITIVE_INFINITY))
-
-;;See page 29 of Lavalle - stf = state transition function. Also, just "neighbors"
-;Note that this implementation suffers from opacity and inflexiblity
-(defn search [frontier initial-state goal stf]
-  (loop [Q (conj frontier initial-state) visited {initial-state nil}]
-    (cond
-      (= (peek Q) goal) (vec (take-while some? (iterate visited goal)))
-      (empty? Q) nil
-      :else (let [neighbors (remove #(contains? visited %) (stf (peek Q)))]
-              (recur
-                (into (pop Q) neighbors)
-                (into visited (zipmap neighbors (repeat (peek Q)))))))))
-
-(def dfs (partial search []))
-(def bfs (partial search empty-queue))
+(def infinity #?(:clj Double/POSITIVE_INFINITY, :cljs +Infinity))
 
 ;;Helper functions
 (defn exhaust-search [search-seq]
@@ -57,7 +22,6 @@
 (defn search [goal search-seq]
   (some->> search-seq (goal-met goal) (recover-path goal)))
 
-;Breadth first search
 (defn search-step [neighbors {:keys [frontier visited] :as m}]
   (let [next-state (peek frontier)
         new-neighbors (remove #(contains? visited %) (neighbors next-state))]
@@ -137,11 +101,19 @@
 (defn A*-search [neighbors cost-fn heuristic {:keys [goal] :as m}]
   (search goal (A*-seq neighbors cost-fn heuristic m)))
 
-(defmacro defsearch [search-name n & args]
-  `(defn ~search-name [~@args]
-     (search (:goal ~(last args)) (~n ~@args))))
-
-(macroexpand
-  '(defsearch A* A*-seq neighbors cost-fn heuristic m))
-
-(defsearch A* A*-seq neighbors cost-fn heuristic m)
+;An older loop-recur implementation.
+; This is probably in line with what you might find in most textbooks.
+;;;See page 29 of Lavalle - stf = state transition function. Also, just "neighbors"
+;;Note that this implementation suffers from opacity and inflexiblity
+;(defn search [frontier initial-state goal stf]
+;  (loop [Q (conj frontier initial-state) visited {initial-state nil}]
+;    (cond
+;      (= (peek Q) goal) (vec (take-while some? (iterate visited goal)))
+;      (empty? Q) nil
+;      :else (let [neighbors (remove #(contains? visited %) (stf (peek Q)))]
+;              (recur
+;                (into (pop Q) neighbors)
+;                (into visited (zipmap neighbors (repeat (peek Q)))))))))
+;
+;(def dfs (partial search []))
+;(def bfs (partial search empty-queue))

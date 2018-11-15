@@ -1,7 +1,8 @@
 (ns planning.meadow-test
   (:require [clojure.test :refer :all]
             [clojure.string :as cs]
-            [planning.core :as p]))
+            [planning.core :as p]
+            [planning.utils :as u]))
 
 (defn add-path [text-map path]
   (->> path
@@ -45,16 +46,12 @@
    "############  ##################"])
 
 (defn neighbors [a]
-  (filter (fn [c] (= "#" (str (get-in meadow-32x32x4 c)))) (p/neighbors-8 a)))
+  (filter (fn [c] (= "#" (str (get-in meadow-32x32x4 c)))) (u/moore-neigbors a)))
 
-(def A*-meadow-search (partial p/A*-search neighbors p/euclidian-distance p/euclidian-distance))
-(def dijkstra-meadow-search (partial p/dijkstra-path neighbors p/euclidian-distance))
+(def A*-meadow-search (partial p/A*-search neighbors u/euclidian-distance u/euclidian-distance))
+(def dijkstra-meadow-search (partial p/dijkstra-path neighbors u/euclidian-distance))
 (def bfs-meadow-search (partial p/breadth-first-search neighbors))
-(def greedy-meadow-search (partial p/greedy-bfs-search neighbors p/euclidian-distance))
-
-(deftest test-greedy-bfs
-  (testing "Greedy BFS with diagonal moves"
-    ))
+(def greedy-meadow-search (partial p/greedy-bfs-search neighbors u/euclidian-distance))
 
 (->>
   (A*-meadow-search {:start [4 20] :goal [31 11]})
