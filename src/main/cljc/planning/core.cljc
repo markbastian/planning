@@ -2,12 +2,10 @@
   (:require #?(:clj  [clojure.pprint :refer [pprint]]
                :cljs [cljs.pprint :refer [pprint]])
             #?(:clj  [clojure.data.priority-map :refer [priority-map]]
-               :cljs [tailrecursion.priority-map :refer [priority-map]])))
+               :cljs [tailrecursion.priority-map :refer [priority-map]]))
+  #?(:clj (:import (clojure.lang PersistentQueue))))
 
-(def empty-queue #?(:clj  (clojure.lang.PersistentQueue/EMPTY)
-                    :cljs (cljs.core.PersistentQueue/EMPTY)))
-
-(def infinity #?(:clj Double/POSITIVE_INFINITY, :cljs +Infinity))
+(def empty-queue #?(:clj (PersistentQueue/EMPTY) :cljs #queue[]))
 
 ;;Helper functions
 (defn exhaust-search [search-seq]
@@ -44,7 +42,7 @@
 (defn compute-costs [current-state neighbors-fn current-costs cost-fn]
   (for [neighbor (neighbors-fn current-state)
         :let [new-cost (+ (current-costs current-state) (cost-fn current-state neighbor))]
-        :when (< new-cost (current-costs neighbor infinity))]
+        :when (< new-cost (current-costs neighbor ##Inf))]
     [neighbor new-cost]))
 
 ;Dijkstra's algorithm

@@ -30,12 +30,14 @@
 
   :cljsbuild {:builds
               {:dev {:source-paths ["src/main/cljs" "src/main/cljc"]
-                     :compiler     {:main         planning.app
-                                    :asset-path   "js/out"
-                                    :output-to    "resources/public/js/planning.js"
-                                    :output-dir   "resources/public/js/out"
+                     :figwheel     true
+                     :compiler     {:main                 planning.app
+                                    :asset-path           "js/out"
+                                    :output-to            "resources/public/js/planning.js"
+                                    :output-dir           "resources/public/js/out"
                                     :source-map-timestamp true
-                                    :pretty-print true}}
+                                    :pretty-print         true}}
+
                :min {:source-paths ["src/main/cljs" "src/main/cljc"]
                      :compiler     {:main          planning.app
                                     :output-to     "resources/public/js/planning.js"

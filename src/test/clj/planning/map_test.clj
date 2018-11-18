@@ -49,12 +49,12 @@
   {"#" 1
    "^" 2
    "~" 0.5
-   " " p/infinity})
+   " " ##Inf})
 
 (defn cost-fn [grid from to]
   (*
     (u/euclidian-distance from to)
-    (terrain-cost (str (get-in grid to)) p/infinity)))
+    (terrain-cost (str (get-in grid to)) ##Inf)))
 
 (def A*-meadow-search
   (partial
