@@ -2,11 +2,8 @@
   (:require [planning.core :as p]
             [planning.utils :as u]
             [tailrecursion.priority-map :refer [priority-map]]
-            [reagent.core :as reagent :refer [atom cursor]]))
-
-(def people '{:elf 🧝})
-
-(def items '{:dagger 🗡️ :swords ⚔ :key 🗝️️ :crown 👑})
+            [reagent.core :as reagent :refer [atom cursor]]
+            [clojure.string :as cs]))
 
 (def cost '{🌲 1 🌳 1.5 🌴 2 ⛰ 5 🌋 10})
 
@@ -14,7 +11,6 @@
 (def grid-size 12)
 
 (def state (atom {:grid (vec (repeat grid-size (vec (repeat grid-size '🌲))))}))
-;(def state (atom {:grid (apply mapv vector grid)}))
 
 (defn A*-meadow-search [{:keys [grid start goal] :as m}]
   (when (and start goal)
@@ -39,7 +35,7 @@
     (fn []
       (let [[i j] @goal]
         (when @goal
-          [:text {:x       (* i cell-dim)
+          [:text {:x       (+ (* i cell-dim) (* 0.125 cell-dim))
                   :y       (- (* (inc j) cell-dim) (* 0.25 cell-dim))
                   :onClick #(swap! state dissoc state-key)}
            emoji])))))
@@ -69,10 +65,12 @@
         w (count @grid)
         h (count (first @grid))]
     (fn []
-      [:div {:style {:cursor :pointer :user-select :none}}
+      ;https://stackoverflow.com/questions/9251590/prevent-page-scroll-on-drag-in-ios-and-android
+      [:div {:style {:cursor :pointer :user-select :none
+                     :onTouchMove (fn [e] (.preventDefault e))}}
        [:svg {:width        (* cell-dim w)
               :height       (* cell-dim h)
-              :onTouchStart #(do (prn "start") (reset! dragging true))
+              :onTouchStart #(reset! dragging true)
               :onTouchEnd   #(reset! dragging false)
               :onMouseDown  #(reset! dragging true)
               :onMouseUp    #(reset! dragging false)
@@ -82,7 +80,7 @@
         (doall
           (for [i (range w) j (range h) :let [c (get-in @grid [i j])]]
             [:text {:key         (str i ":" j)
-                    :x           (* i cell-dim)
+                    :x           (+ (* i cell-dim) (* 0.125 cell-dim))
                     :y           (- (* (inc j) cell-dim) 6)
                     :data-i      i
                     :data-j      j
@@ -92,7 +90,10 @@
                     :onTouchMove (fn [event]
                                    (when (and @dragging @paintbrush)
                                      (let [touch (.item (.-touches event) 0)
-                                           dataset (.-dataset (. js/document (elementFromPoint (.-clientX touch) (.-clientY touch))))
+                                           dataset (.-dataset (. js/document
+                                                                 (elementFromPoint
+                                                                   (.-clientX touch)
+                                                                   (.-clientY touch))))
                                            i (some-> dataset .-i js/parseInt)
                                            j (some-> dataset .-j js/parseInt)]
                                        (when (and i j)
@@ -108,8 +109,8 @@
         [render-goal state :goal '🗃️]]
        [:div
         [:span
-         (doall (for [k ["\uD83C\uDF32" "\uD83C\uDF33" "\uD83C\uDF34" "⛰" "\uD83C\uDF0B"]]
-                  ^{:key (str k)} [add-paintbrush state k]))]]])))
+         (doall (for [k ["\uD83C\uDF32" "\uD83C\uDF33" "\uD83C\uDF34" "\u26F0\uFE0F" "\uD83C\uDF0B"]]
+                  ^{:key k} [add-paintbrush state k]))]]])))
 
 (when-let [app-context (. js/document (getElementById "app"))]
   (let [state state]

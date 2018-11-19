@@ -11,6 +11,9 @@
 
   :jar-exclusions [#"\.swp|\.swo|\.DS_Store"]
 
+  :aliases {"min-build" ["with-profile" "cljs" "cljsbuild" "once" "min"]
+            "fig" ["with-profile" "cljs" "figwheel"]}
+
   :profiles {:uberjar {:aot :all}
              :dev     {:plugins      [[lein-figwheel "0.5.17"]
                                       [lein-cljsbuild "1.1.7"]

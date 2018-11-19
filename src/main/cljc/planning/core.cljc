@@ -98,20 +98,3 @@
 
 (defn A*-search [neighbors cost-fn heuristic {:keys [goal] :as m}]
   (search goal (A*-seq neighbors cost-fn heuristic m)))
-
-;An older loop-recur implementation.
-; This is probably in line with what you might find in most textbooks.
-;;;See page 29 of Lavalle - stf = state transition function. Also, just "neighbors"
-;;Note that this implementation suffers from opacity and inflexiblity
-;(defn search [frontier initial-state goal stf]
-;  (loop [Q (conj frontier initial-state) visited {initial-state nil}]
-;    (cond
-;      (= (peek Q) goal) (vec (take-while some? (iterate visited goal)))
-;      (empty? Q) nil
-;      :else (let [neighbors (remove #(contains? visited %) (stf (peek Q)))]
-;              (recur
-;                (into (pop Q) neighbors)
-;                (into visited (zipmap neighbors (repeat (peek Q)))))))))
-;
-;(def dfs (partial search []))
-;(def bfs (partial search empty-queue))
