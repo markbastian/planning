@@ -10,28 +10,11 @@
 
 (def cost '{🌲 1 🌳 1.5 🌴 2 ⛰ 5 🌋 10})
 
-(def grid '[[🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 ⛰ ⛰ ⛰ ⛰ ⛰ 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 ⛰ ⛰ ⛰ ⛰ ⛰ 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 ⛰ ⛰ ⛰ ⛰ ⛰ 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 ⛰ ⛰ ⛰ ⛰ ⛰ 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]
-            [🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲 🌲]])
+(def cell-dim 24)
+(def grid-size 12)
 
-(def state (atom {:grid (apply mapv vector grid)}))
+(def state (atom {:grid (vec (repeat grid-size (vec (repeat grid-size '🌲))))}))
+;(def state (atom {:grid (apply mapv vector grid)}))
 
 (defn A*-meadow-search [{:keys [grid start goal] :as m}]
   (when (and start goal)
@@ -42,47 +25,49 @@
       m)))
 
 (defn render-path [state]
-  (let [cell-dim 16]
-    (doall
-      (for [[i j] (A*-meadow-search @state)]
-        [:circle {:key    (str "step:" i ":" j)
-                  :cx     (* (+ i 0.5) cell-dim)
-                  :cy     (* (+ j 0.5) cell-dim)
-                  :r      (* cell-dim 0.5)
-                  :stroke :black
-                  :fill   :green}]))))
+  (doall
+    (for [[i j] (A*-meadow-search @state)]
+      [:circle {:key    (str "step:" i ":" j)
+                :cx     (* (+ i 0.5) cell-dim)
+                :cy     (* (+ j 0.5) cell-dim)
+                :r      (* cell-dim 0.5)
+                :stroke :black
+                :fill   :gray}])))
 
 (defn render-goal [state state-key emoji]
-  (let [goal (cursor state [state-key])
-        cell-dim 16]
+  (let [goal (cursor state [state-key])]
     (fn []
       (let [[i j] @goal]
         (when @goal
           [:text {:x       (* i cell-dim)
-                  :y       (* (inc j) cell-dim)
+                  :y       (- (* (inc j) cell-dim) (* 0.25 cell-dim))
                   :onClick #(swap! state dissoc state-key)}
            emoji])))))
 
 (defn add-paintbrush [state brush]
-  (let [paintbrush (cursor state [:paintbrush])]
+  (let [paintbrush (cursor state [:paintbrush])
+        x (double (/ (* cell-dim grid-size) (count cost)))]
     (fn []
-      [:span {:onClick #(if-not (= brush @paintbrush)
-                          (reset! paintbrush brush)
-                          (swap! state dissoc :paintbrush))
-              :style   (cond-> {:cursor :pointer}
-                               (= brush @paintbrush)
-                               (assoc :text-decoration :underline))}
-       brush])))
+      [:svg {:width x :height cell-dim}
+       [:rect {:width x :height cell-dim
+               :fill (if (= brush @paintbrush) :gray :white)}]
+       [:text {:x       (* 0.5 (- x cell-dim))
+               :y       (* 0.75 cell-dim)
+               :onClick #(if-not (= brush @paintbrush)
+                           (reset! paintbrush brush)
+                           (swap! state dissoc :paintbrush))}
+        (str brush)]])))
 
 ;https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/Events
 ;https://developer.mozilla.org/en-US/docs/Web/API/Touch_events
 ;https://reactjs.org/docs/events.html#touch-events
 ;https://www.javascripture.com/Touch
 (defn render [state]
-  (let [w 20 h 20 cell-dim 16
-        grid (cursor state [:grid])
+  (let [grid (cursor state [:grid])
         paintbrush (cursor state [:paintbrush])
-        dragging (atom false)]
+        dragging (atom false)
+        w (count @grid)
+        h (count (first @grid))]
     (fn []
       [:div {:style {:cursor :pointer :user-select :none}}
        [:svg {:width        (* cell-dim w)
@@ -98,7 +83,7 @@
           (for [i (range w) j (range h) :let [c (get-in @grid [i j])]]
             [:text {:key         (str i ":" j)
                     :x           (* i cell-dim)
-                    :y           (* (inc j) cell-dim)
+                    :y           (- (* (inc j) cell-dim) 6)
                     :data-i      i
                     :data-j      j
                     :onMouseOver #(when (and @dragging @paintbrush)
@@ -123,11 +108,8 @@
         [render-goal state :goal '🗃️]]
        [:div
         [:span
-         [add-paintbrush state '🌲]
-         [add-paintbrush state '🌳]
-         [add-paintbrush state '🌴]
-         [add-paintbrush state '⛰]
-         [add-paintbrush state '🌋]]]])))
+         (doall (for [k ["\uD83C\uDF32" "\uD83C\uDF33" "\uD83C\uDF34" "⛰" "\uD83C\uDF0B"]]
+                  ^{:key (str k)} [add-paintbrush state k]))]]])))
 
 (when-let [app-context (. js/document (getElementById "app"))]
   (let [state state]

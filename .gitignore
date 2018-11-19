@@ -14,3 +14,4 @@ pom.xml.asc
 scratch.clj
 *.log
 *.swp
+.rebel_readline_history
