@@ -3,6 +3,7 @@
             [planning.utils :as u]
             [tailrecursion.priority-map :refer [priority-map]]
             [reagent.core :as reagent :refer [atom cursor]]
+            [cljsjs.hammer]
             [clojure.string :as cs]))
 
 (def cost '{🌲 1 🌳 1.5 🌴 2 ⛰ 5 🌋 10})
@@ -66,9 +67,8 @@
         h (count (first @grid))]
     (fn []
       ;https://stackoverflow.com/questions/9251590/prevent-page-scroll-on-drag-in-ios-and-android
-      [:div {:style {:cursor :pointer :user-select :none
-                     :onTouchMove (fn [e] (.preventDefault e))}}
-       [:svg {:width        (* cell-dim w)
+      [:div.no-bounce {:style {:cursor :pointer :user-select :none}}
+       [:svg#foo {:width        (* cell-dim w)
               :height       (* cell-dim h)
               :onTouchStart #(reset! dragging true)
               :onTouchEnd   #(reset! dragging false)
@@ -113,7 +113,21 @@
                   ^{:key k} [add-paintbrush state k]))]]])))
 
 (when-let [app-context (. js/document (getElementById "app"))]
-  (let [state state]
-    (reagent/render-component
-      [render state]
-      app-context)))
+  (let [state state
+        mc (js/Hammer. app-context)]
+    (do
+      (.on mc "panleft panright tap press" (fn [e]
+                                             (prn e)
+                                             (prn "eafs")))
+      (reagent/render-component
+        [render state]
+        app-context))))
+
+;Try this - It prevents ALL touches, but might be close to right.
+;https://stackoverflow.com/questions/16348031/disable-scrolling-when-touch-moving-certain-element
+
+;;This doesn't seem to work
+;(. js/document (addEventListener
+;                 "touchmove"
+;                 (fn [e] (.preventDefault e))
+;                 {:passive false}))

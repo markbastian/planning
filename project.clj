@@ -24,7 +24,8 @@
              :cljs    {:plugins      [[lein-cljsbuild "1.1.7"]]
                        :dependencies [[org.clojure/clojurescript "1.10.439"]
                                       [tailrecursion/cljs-priority-map "1.2.1"]
-                                      [reagent "0.8.1"]]}}
+                                      [reagent "0.8.1"]
+                                      [cljsjs/hammer "2.0.8-0"]]}}
 
   :source-paths ["src/main/clj" "src/main/cljc"]
   :test-paths ["src/test/clj" "src/test/cljc"]

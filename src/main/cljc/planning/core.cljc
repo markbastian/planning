@@ -64,37 +64,37 @@
   (search goal (dijkstra-seq neighbors cost-fn m)))
 
 ;Greedy best first search
-(defn greedy-bfs-step [neighbors heuristic {:keys [goal frontier visited] :as m}]
+(defn greedy-bfs-step [neighbors heuristic-fn {:keys [goal frontier visited] :as m}]
   (let [[current-state _] (peek frontier)
         new-neighbors (remove #(contains? visited %) (neighbors current-state))]
     (-> m
-        (update :frontier #(-> % pop (into (for [n new-neighbors] [n (heuristic goal n)]))))
+        (update :frontier #(-> % pop (into (for [n new-neighbors] [n (heuristic-fn goal n)]))))
         (update :visited into (zipmap new-neighbors (repeat current-state))))))
 
-(defn greedy-bfs-seq [neighbors heuristic {:keys [start] :as m}]
+(defn greedy-bfs-seq [neighbors heuristic-fn {:keys [start] :as m}]
   (->> m
        (into {:frontier (priority-map start 0) :visited {start nil}})
-       (iterate (partial greedy-bfs-step neighbors heuristic))
+       (iterate (partial greedy-bfs-step neighbors heuristic-fn))
        exhaust-search))
 
-(defn greedy-bfs-search [neighbors heuristic {:keys [goal] :as m}]
-  (search goal (greedy-bfs-seq neighbors heuristic m)))
+(defn greedy-bfs-search [neighbors heuristic-fn {:keys [goal] :as m}]
+  (search goal (greedy-bfs-seq neighbors heuristic-fn m)))
 
 ;A* algorithm
-(defn A*-step [neighbors cost-fn heuristic {:keys [goal frontier cost] :as m}]
+(defn A*-step [neighbors cost-fn heuristic-fn {:keys [goal frontier cost] :as m}]
   (let [[current-state] (peek frontier)
         costs (compute-costs current-state neighbors cost cost-fn)
-        estimates (map (fn [[s c]] [s (+ c (heuristic goal s))]) costs)]
+        estimates (map (fn [[s c]] [s (+ c (heuristic-fn goal s))]) costs)]
     (-> m
         (update :frontier #(-> % pop (into estimates)))
         (update :cost into costs)
         (update :visited into (map (fn [[c]] [c current-state]) costs)))))
 
-(defn A*-seq [neighbors cost-fn heuristic {:keys [start] :as m}]
+(defn A*-seq [neighbors cost-fn heuristic-fn {:keys [start] :as m}]
   (->> m
        (into {:frontier (priority-map start 0) :cost {start 0} :visited {start nil}})
-       (iterate (partial A*-step neighbors cost-fn heuristic))
+       (iterate (partial A*-step neighbors cost-fn heuristic-fn))
        exhaust-search))
 
-(defn A*-search [neighbors cost-fn heuristic {:keys [goal] :as m}]
-  (search goal (A*-seq neighbors cost-fn heuristic m)))
+(defn A*-search [neighbors cost-fn heuristic-fn {:keys [goal] :as m}]
+  (search goal (A*-seq neighbors cost-fn heuristic-fn m)))
