@@ -16,10 +16,10 @@
 (defn A*-meadow-search [{:keys [grid start goal] :as m}]
   (when (and start goal)
     (p/A*-search
-      (partial u/moore-neigbors grid)
-      (fn [f t] (* (cost (get-in grid t) ##Inf) (u/euclidian-distance f t)))
-      u/euclidian-distance
-      m)))
+      (assoc m
+        :neighbors (partial u/moore-neigbors grid)
+        :cost-fn (fn [f t] (* (cost (get-in grid t) ##Inf) (u/euclidian-distance f t)))
+        :heuristic-fn u/euclidian-distance))))
 
 (defn render-path [state]
   (doall

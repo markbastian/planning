@@ -56,18 +56,18 @@
     (u/euclidian-distance from to)
     (terrain-cost (str (get-in grid to)) ##Inf)))
 
-(def A*-meadow-search
-  (partial
-    p/A*-search
-    (partial u/moore-neigbors meadow-32x32x4)
-    (partial cost-fn meadow-32x32x4)
-    u/euclidian-distance))
+(defn A*-meadow-search [m]
+  (p/A*-search
+    (assoc m
+      :neighbors (partial u/moore-neigbors meadow-32x32x4)
+      :cost-fn (partial cost-fn meadow-32x32x4)
+      :heuristic-fn u/euclidian-distance)))
 
-(def dijkstra-meadow-search
-  (partial
-    p/dijkstra-path
-    (partial u/moore-neigbors meadow-32x32x4)
-    (partial cost-fn meadow-32x32x4)))
+(defn dijkstra-meadow-search [m]
+  (p/dijkstra-path
+    (assoc m
+       :neighbors (partial u/moore-neigbors meadow-32x32x4)
+       :cost-fn (partial cost-fn meadow-32x32x4))))
 
 (->>
   (A*-meadow-search {:start [8 0] :goal [31 31]})

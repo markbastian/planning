@@ -48,10 +48,14 @@
 (defn neighbors [a]
   (filter (fn [c] (= "#" (str (get-in meadow-32x32x4 c)))) (u/moore-neigbors a)))
 
-(def A*-meadow-search (partial p/A*-search neighbors u/euclidian-distance u/euclidian-distance))
-(def dijkstra-meadow-search (partial p/dijkstra-path neighbors u/euclidian-distance))
-(def bfs-meadow-search (partial p/breadth-first-search neighbors))
-(def greedy-meadow-search (partial p/greedy-bfs-search neighbors u/euclidian-distance))
+(def fns {:neighbors neighbors
+          :cost-fn u/euclidian-distance
+          :heuristic-fn u/euclidian-distance})
+
+(defn A*-meadow-search [m] (p/A*-search (into fns m)))
+(defn dijkstra-meadow-search [m] (p/dijkstra-path (into fns m)))
+(defn bfs-meadow-search [m] (p/breadth-first-search (into fns m)))
+(defn greedy-meadow-search [m] (p/greedy-bfs-search (into fns m)))
 
 (->>
   (A*-meadow-search {:start [4 20] :goal [31 11]})
