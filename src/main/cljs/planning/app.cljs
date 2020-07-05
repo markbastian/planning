@@ -15,7 +15,7 @@
 
 (defn A*-meadow-search [{:keys [grid start goal] :as m}]
   (when (and start goal)
-    (p/A*-search
+    (p/A-star-search
       (assoc m
         :neighbors (partial u/moore-neigbors grid)
         :cost-fn (fn [f t] (* (cost (get-in grid t) ##Inf) (u/euclidian-distance f t)))

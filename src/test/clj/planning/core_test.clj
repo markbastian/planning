@@ -21,7 +21,7 @@
 
 (deftest test-dijkstra-path-with-height-delta-cost
   (testing "Dijkstra's algorithm with a cost function of absolute difference in cell heights."
-    (let [solution (p/dijkstra-path
+    (let [solution (p/dijkstra-search
                      {:start     [0 0]
                       :goal      [5 5]
                       :neighbors (partial u/von-neumann-neighbors height-map)
@@ -37,7 +37,7 @@
 
 (deftest test-dijkstra-path-with-diagonal-delta-cost
   (testing "Dijkstra's algorithm with a cost function that takes into account the added distance of diagonal moves."
-    (let [solution (p/dijkstra-path
+    (let [solution (p/dijkstra-search
                      {:start     [0 0]
                       :goal      [5 5]
                       :neighbors (partial u/moore-neigbors height-map)
@@ -53,7 +53,7 @@
 
 (deftest test-greedy-bfs
   (testing "Greedy BFS with diagonal moves"
-    (let [solution (p/greedy-bfs-search
+    (let [solution (p/greedy-breadth-first-search
                      {:start        [0 0]
                       :goal         [5 5]
                       :neighbors    (partial u/moore-neigbors height-map)
@@ -61,11 +61,13 @@
       (is (= [[0 0] [1 1] [2 2] [3 3] [4 4] [5 5]] solution)))))
 
 (defn barrier-neighbors [c]
-  (filter (fn [n] (when-some [h (get-in barrier-map n)] (pos? h))) (u/moore-neigbors c)))
+  (filter
+    (fn [n] (when-some [h (get-in barrier-map n)] (pos? h)))
+    (u/moore-neigbors c)))
 
 (deftest dijkstra-with-barriers
   (testing "Dijkstra's algorithm will find the best path (not shown here, is the more exhaustive search performed)."
-    (let [solution (p/dijkstra-path
+    (let [solution (p/dijkstra-search
                      {:start     [0 0]
                       :goal      [5 5]
                       :neighbors barrier-neighbors
@@ -81,7 +83,7 @@
 
 (deftest greedy-bfs-with-barriers
   (testing "Greedy BFS will not find the best solution."
-    (let [solution (p/greedy-bfs-search
+    (let [solution (p/greedy-breadth-first-search
                      {:start        [0 0]
                       :goal         [5 5]
                       :neighbors    barrier-neighbors

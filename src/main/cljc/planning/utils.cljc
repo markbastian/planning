@@ -4,7 +4,8 @@
   (filter (partial get-in grid) (neighbors c)))
 
 (defn von-neumann-neighbors
-  "https://en.wikipedia.org/wiki/Von_Neumann_neighborhood"
+  "Return the 8 neighboring cells in a cartesian grid.
+  https://en.wikipedia.org/wiki/Von_Neumann_neighborhood"
   ([[x y]]
    (let [i ((juxt inc identity dec identity) x)
          j ((juxt identity inc identity dec) y)]
@@ -12,7 +13,8 @@
   ([grid c] (grid-neigbors von-neumann-neighbors grid c)))
 
 (defn moore-neigbors
-  "https://en.wikipedia.org/wiki/Moore_neighborhood"
+  "Return the 4 neighboring adjacent cells in a cartesian grid.
+  https://en.wikipedia.org/wiki/Moore_neighborhood"
   ([[x y]]
    (let [i ((juxt inc inc identity dec dec dec identity inc) x)
          j ((juxt identity inc inc inc identity dec dec dec) y)]

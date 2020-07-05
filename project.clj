@@ -4,8 +4,8 @@
   :url "https://github.com/markbastian/planning"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.9.0"]
-                 [org.clojure/data.priority-map "0.0.10"]
+  :dependencies [[org.clojure/clojure "1.10.1"]
+                 [org.clojure/data.priority-map "1.0.0"]
                  ;For Java module system compatibility
                  [javax.xml.bind/jaxb-api "2.4.0-b180830.0359"]]
 
@@ -18,13 +18,13 @@
              :dev     {:plugins      [[lein-figwheel "0.5.17"]
                                       [lein-cljsbuild "1.1.7"]
                                       [org.clojure/clojurescript "1.10.439"]]
-                       :dependencies [[cider/piggieback "0.3.10"]
-                                      [figwheel-sidecar "0.5.17"]]
+                       :dependencies [[cider/piggieback "0.5.0"]
+                                      [figwheel-sidecar "0.5.20"]]
                        :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}}
              :cljs    {:plugins      [[lein-cljsbuild "1.1.7"]]
-                       :dependencies [[org.clojure/clojurescript "1.10.439"]
+                       :dependencies [[org.clojure/clojurescript "1.10.773"]
                                       [tailrecursion/cljs-priority-map "1.2.1"]
-                                      [reagent "0.8.1"]
+                                      [reagent "0.10.0"]
                                       [cljsjs/hammer "2.0.8-0"]]}}
 
   :source-paths ["src/main/clj" "src/main/cljc"]

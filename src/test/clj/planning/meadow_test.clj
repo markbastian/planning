@@ -52,10 +52,10 @@
           :cost-fn u/euclidian-distance
           :heuristic-fn u/euclidian-distance})
 
-(defn A*-meadow-search [m] (p/A*-search (into fns m)))
-(defn dijkstra-meadow-search [m] (p/dijkstra-path (into fns m)))
+(defn A*-meadow-search [m] (p/A-star-search (into fns m)))
+(defn dijkstra-meadow-search [m] (p/dijkstra-search (into fns m)))
 (defn bfs-meadow-search [m] (p/breadth-first-search (into fns m)))
-(defn greedy-meadow-search [m] (p/greedy-bfs-search (into fns m)))
+(defn greedy-meadow-search [m] (p/greedy-breadth-first-search (into fns m)))
 
 (->>
   (A*-meadow-search {:start [4 20] :goal [31 11]})

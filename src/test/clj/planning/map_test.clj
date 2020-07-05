@@ -57,14 +57,14 @@
     (terrain-cost (str (get-in grid to)) ##Inf)))
 
 (defn A*-meadow-search [m]
-  (p/A*-search
+  (p/A-star-search
     (assoc m
       :neighbors (partial u/moore-neigbors meadow-32x32x4)
       :cost-fn (partial cost-fn meadow-32x32x4)
       :heuristic-fn u/euclidian-distance)))
 
 (defn dijkstra-meadow-search [m]
-  (p/dijkstra-path
+  (p/dijkstra-search
     (assoc m
        :neighbors (partial u/moore-neigbors meadow-32x32x4)
        :cost-fn (partial cost-fn meadow-32x32x4))))
