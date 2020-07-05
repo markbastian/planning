@@ -22,9 +22,19 @@
   ([grid c]
    (grid-neigbors moore-neigbors grid c)))
 
-(defn euclidian-distance [a b]
+(defn euclidian-distance
+  "Straight line distance between points."
+  [a b]
   (let [u (map - a b)]
     (Math/sqrt (reduce + (map * u u)))))
+
+(defn heightmap-distance
+  "Straight line distance between points on a grid where Z coordinate is taken
+  as the value at the coordinate in the grid."
+  [heightmap a b]
+  (let [u (conj a (get-in heightmap a))
+        v (conj b (get-in heightmap b))]
+    (euclidian-distance u v)))
 
 (defn manhattan-distance [a b]
   (reduce + (map (comp #(Math/abs %) -) a b)))

@@ -5,6 +5,11 @@
             [clojure.string :as cs]))
 
 (def meadow-32x32x4
+  "A text map in which there is varying terrain difficulty:
+  * # is plains (easy)
+  * ^ is mountains (hard)
+  * ~ is water (easiest - maybe you have a boat)
+  * \" \" is not traversable"
   ["################################"
    "#######################     ####"
    "######################       ###"
@@ -23,9 +28,9 @@
    "####~########^^^^^^#############"
    "####~############^^^^###########"
    "#####~##########^^##############"
-   "#####~##   ###^^^###############"
+   "#####~##   ###^^################"
    "######~     ####^^##############"
-   "######~     ##^^################"
+   "######~     #^^^^###############"
    "######~    #####################"
    "#######~  ######################"
    "########~~######################"
@@ -45,38 +50,40 @@
          (mapv vec text-map))
        (mapv cs/join)))
 
-(def terrain-cost
-  {"#" 1
-   "^" 2
-   "~" 0.5
-   " " ##Inf})
+(def terrain-cost {"#" 1 "^" 2 "~" 0.5 " " ##Inf})
 
 (defn cost-fn [grid from to]
   (*
     (u/euclidian-distance from to)
     (terrain-cost (str (get-in grid to)) ##Inf)))
 
-(defn A*-meadow-search [m]
-  (p/A-star-search
-    (assoc m
-      :neighbors (partial u/moore-neigbors meadow-32x32x4)
-      :cost-fn (partial cost-fn meadow-32x32x4)
-      :heuristic-fn u/euclidian-distance)))
+(def default-setup
+  {:neighbors-fn (partial u/moore-neigbors meadow-32x32x4)
+   :cost-fn      (partial cost-fn meadow-32x32x4)
+   :heuristic-fn u/euclidian-distance})
 
-(defn dijkstra-meadow-search [m]
-  (p/dijkstra-search
-    (assoc m
-       :neighbors (partial u/moore-neigbors meadow-32x32x4)
-       :cost-fn (partial cost-fn meadow-32x32x4))))
+(comment
+  (->> {:start [0 0] :goal [31 31]} (into default-setup) p/A-star-search (add-path meadow-32x32x4))
+  (->> {:start [0 0] :goal [31 31]} (into default-setup) p/dijkstra-search (add-path meadow-32x32x4))
 
-(->>
-  (A*-meadow-search {:start [8 0] :goal [31 31]})
-  (add-path meadow-32x32x4))
+  (->> {:start [8 3] :goal [31 31]} (into default-setup) p/A-star-search (add-path meadow-32x32x4))
+  (->> {:start [8 3] :goal [31 31]} (into default-setup) p/dijkstra-search (add-path meadow-32x32x4))
 
-(->>
-  (A*-meadow-search {:start [0 0] :goal [31 31]})
-  (add-path meadow-32x32x4))
+  (->> {:start [8 3] :goal [14 17]} (into default-setup) p/A-star-search (add-path meadow-32x32x4))
+  (->> {:start [8 3] :goal [14 17]} (into default-setup) p/dijkstra-search (add-path meadow-32x32x4)))
 
-(->>
-  (dijkstra-meadow-search {:start [0 0] :goal [31 31]})
-  (add-path meadow-32x32x4))
+(deftest a-star-steps-lte-dijkstra-steps-tests
+  (testing "Example-based: A* should take less steps than Dijkstra solution."
+    (let [problem (into default-setup {:start [0 0] :goal [31 31]})
+          ca (count (:visited (p/A-star-terminus problem)))
+          cd (count (:visited (p/dijkstra-terminus problem)))]
+      (is (= [226 930] [ca cd]))
+      (is (< ca (/ cd 3))))
+    (let [problem (into default-setup {:start [8 3] :goal [14 17]})]
+      (is (<= (count (:visited (p/A-star-terminus problem)))
+              (count (:visited (p/dijkstra-terminus problem))))))
+    (let [problem (into default-setup {:start [8 3] :goal [31 31]})]
+      (is (< (count (:visited (p/A-star-terminus problem)))
+             (count (:visited (p/dijkstra-terminus problem))))))))
+
+

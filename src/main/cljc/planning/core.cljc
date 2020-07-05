@@ -7,22 +7,22 @@
 
 (def empty-queue #?(:clj (PersistentQueue/EMPTY) :cljs #queue[]))
 
-(defn update-frontier [m additions]
+(defn- update-frontier [m additions]
   (update m :frontier #(-> % pop (into additions))))
 
-(defn update-visited [m from-state new-neighbors]
+(defn- update-visited [m from-state new-neighbors]
   (update m :visited into (zipmap new-neighbors (repeat from-state))))
 
-(defn bd-search-step [{:keys [neighbors frontier visited] :as m}]
+(defn bd-search-step [{:keys [neighbors-fn frontier visited] :as m}]
   (let [current-state (peek frontier)
-        new-neighbors (remove #(contains? visited %) (neighbors current-state))]
+        new-neighbors (remove #(contains? visited %) (neighbors-fn current-state))]
     (-> m
         (update-frontier new-neighbors)
         (update-visited current-state new-neighbors))))
 
-(defn greedy-breadth-first-step [{:keys [neighbors heuristic-fn goal frontier visited] :as m}]
+(defn greedy-breadth-first-step [{:keys [neighbors-fn heuristic-fn goal frontier visited] :as m}]
   (let [[current-state] (peek frontier)
-        new-neighbors (remove #(contains? visited %) (neighbors current-state))
+        new-neighbors (remove #(contains? visited %) (neighbors-fn current-state))
         estimates (for [n new-neighbors] [n (heuristic-fn goal n)])]
     (-> m
         (update-frontier estimates)
@@ -30,21 +30,22 @@
 
 (defn- neighbors-with-costs [current-state neighbors-fn current-costs cost-fn]
   (for [neighbor (neighbors-fn current-state)
-        :let [new-cost (+ (current-costs current-state) (cost-fn current-state neighbor))]
-        :when (< new-cost (current-costs neighbor ##Inf))]
+        :let [new-cost (+ (current-costs current-state) (cost-fn current-state neighbor))
+              old-cost (current-costs neighbor ##Inf)]
+        :when (< new-cost old-cost)]
     [neighbor new-cost]))
 
-(defn dijkstra-step [{:keys [neighbors cost-fn frontier cost] :as m}]
+(defn dijkstra-step [{:keys [neighbors-fn cost-fn frontier cost] :as m}]
   (let [[current-state] (peek frontier)
-        costs (neighbors-with-costs current-state neighbors cost cost-fn)]
+        costs (neighbors-with-costs current-state neighbors-fn cost cost-fn)]
     (-> m
         (update-frontier costs)
         (update :cost into costs)
         (update-visited current-state (map first costs)))))
 
-(defn A-star-step [{:keys [neighbors cost-fn heuristic-fn goal frontier cost] :as m}]
+(defn A-star-step [{:keys [neighbors-fn cost-fn heuristic-fn goal frontier cost] :as m}]
   (let [[current-state] (peek frontier)
-        costs (neighbors-with-costs current-state neighbors cost cost-fn)
+        costs (neighbors-with-costs current-state neighbors-fn cost cost-fn)
         estimates (map (fn [[s c]] [s (+ c (heuristic-fn goal s))]) costs)]
     (-> m
         (update-frontier estimates)
@@ -88,67 +89,3 @@
 (def dijkstra-search (comp recover-path dijkstra-terminus))
 (def greedy-breadth-first-search (comp recover-path greedy-breadth-first-terminus))
 (def A-star-search (comp recover-path A-star-terminus))
-
-(comment
-  (breadth-first-search
-    {:start     200
-     :goal      17
-     :neighbors (fn [x] (cond-> [(* 2 x) (+ 2 x)] (even? x) (conj (/ x 2))))})
-
-  (map
-    (fn [m] (into m (meta m)))
-    (breadth-first-search
-      {:start     {:value 200}
-       :goal      {:value 17}
-       :neighbors (fn [{:keys [value]}]
-                    (cond-> [^{:op '*} {:value (* 2 value)}
-                             ^{:op '+} {:value (+ 2 value)}]
-                            (even? value)
-                            (conj ^{:op '/} {:value (/ value 2)})))}))
-
-  (require '[planning.utils :as u])
-  (def grid [[1 1 1 1 2 1]
-             [1 1 2 2 2 1]
-             [1 1 5 5 2 1]
-             [1 1 5 5 2 1]
-             [1 2 2 2 2 1]
-             [1 1 1 1 1 1]])
-
-  (letfn [(dist [a b]
-            (let [u (conj a (get-in grid a))
-                  v (conj b (get-in grid b))
-                  w (map - u v)]
-              (Math/sqrt (reduce + (map * w w)))))]
-    (let [path (dijkstra-search
-                 {:start     [0 0]
-                  :goal      [5 5]
-                  :neighbors (partial u/moore-neigbors grid)
-                  :cost-fn   dist})]
-      (u/mark-path grid path)))
-
-  (letfn [(dist [a b]
-            (let [u (conj a (get-in grid a))
-                  v (conj b (get-in grid b))
-                  w (map - u v)]
-              (Math/sqrt (reduce + (map * w w)))))]
-    (let [path (A-star-search
-                 {:start        [0 0]
-                  :goal         [5 5]
-                  :neighbors    (partial u/moore-neigbors grid)
-                  :cost-fn      dist
-                  :heuristic-fn dist})]
-      (u/mark-path grid path)))
-
-  (let [path
-        (depth-first-search
-          {:start     [0 0]
-           :goal      [5 5]
-           :neighbors (partial u/moore-neigbors grid)})]
-    (u/mark-path grid path))
-
-  (let [path
-        (breadth-first-search
-          {:start     [0 0]
-           :goal      [5 5]
-           :neighbors (partial u/moore-neigbors grid)})]
-    (u/mark-path grid path)))

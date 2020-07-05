@@ -22,10 +22,10 @@
 (deftest test-dijkstra-path-with-height-delta-cost
   (testing "Dijkstra's algorithm with a cost function of absolute difference in cell heights."
     (let [solution (p/dijkstra-search
-                     {:start     [0 0]
-                      :goal      [5 5]
-                      :neighbors (partial u/von-neumann-neighbors height-map)
-                      :cost-fn   (fn [a b] (inc (Math/abs (double (- (get-in height-map a) (get-in height-map b))))))})]
+                     {:start        [0 0]
+                      :goal         [5 5]
+                      :neighbors-fn (partial u/von-neumann-neighbors height-map)
+                      :cost-fn      (fn [a b] (inc (Math/abs (double (- (get-in height-map a) (get-in height-map b))))))})]
       (is (= [[0 0] [1 0] [2 0] [3 0] [4 0] [5 0] [5 1] [5 2] [5 3] [5 4] [5 5]] solution))
       (is (= '[[X 1 1 1 2 1]
                [X 1 2 2 2 1]
@@ -38,10 +38,10 @@
 (deftest test-dijkstra-path-with-diagonal-delta-cost
   (testing "Dijkstra's algorithm with a cost function that takes into account the added distance of diagonal moves."
     (let [solution (p/dijkstra-search
-                     {:start     [0 0]
-                      :goal      [5 5]
-                      :neighbors (partial u/moore-neigbors height-map)
-                      :cost-fn   u/euclidian-distance})]
+                     {:start        [0 0]
+                      :goal         [5 5]
+                      :neighbors-fn (partial u/moore-neigbors height-map)
+                      :cost-fn      u/euclidian-distance})]
       (is (= [[0 0] [1 1] [2 2] [3 3] [4 4] [5 5]] solution))
       (is (= '[[X 1 1 1 2 1]
                [1 X 2 2 2 1]
@@ -56,7 +56,7 @@
     (let [solution (p/greedy-breadth-first-search
                      {:start        [0 0]
                       :goal         [5 5]
-                      :neighbors    (partial u/moore-neigbors height-map)
+                      :neighbors-fn (partial u/moore-neigbors height-map)
                       :heuristic-fn u/euclidian-distance})]
       (is (= [[0 0] [1 1] [2 2] [3 3] [4 4] [5 5]] solution)))))
 
@@ -68,10 +68,10 @@
 (deftest dijkstra-with-barriers
   (testing "Dijkstra's algorithm will find the best path (not shown here, is the more exhaustive search performed)."
     (let [solution (p/dijkstra-search
-                     {:start     [0 0]
-                      :goal      [5 5]
-                      :neighbors barrier-neighbors
-                      :cost-fn   u/euclidian-distance})]
+                     {:start        [0 0]
+                      :goal         [5 5]
+                      :neighbors-fn barrier-neighbors
+                      :cost-fn      u/euclidian-distance})]
       (is (= [[0 0] [1 0] [2 0] [3 0] [4 0] [5 1] [5 2] [5 3] [5 4] [5 5]] solution))
       (is (= '[[X 1 1 1 1 1]
                [X 1 0 0 0 1]
@@ -86,7 +86,7 @@
     (let [solution (p/greedy-breadth-first-search
                      {:start        [0 0]
                       :goal         [5 5]
-                      :neighbors    barrier-neighbors
+                      :neighbors-fn barrier-neighbors
                       :heuristic-fn u/euclidian-distance})]
       (is (= [[0 0] [1 1] [2 2] [3 1] [4 0] [5 1] [5 2] [5 3] [5 4] [5 5]] solution))
       (is (= '[[X 1 1 1 1 1]
