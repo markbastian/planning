@@ -28,28 +28,29 @@
         (update-frontier estimates)
         (update-visited current-state new-neighbors))))
 
-(defn- neighbors-with-costs [current-state neighbors-fn current-costs cost-fn]
-  (for [neighbor (neighbors-fn current-state)
-        :let [new-cost (+ (current-costs current-state) (cost-fn current-state neighbor))
-              old-cost (current-costs neighbor ##Inf)]
-        :when (< new-cost old-cost)]
-    [neighbor new-cost]))
+(defn- neighbors-with-costs [{:keys [frontier neighbors-fn cost-fn costs visited]}]
+  (let [[current-state] (peek frontier)]
+    (for [neighbor (neighbors-fn current-state)
+          :let [new-cost (+ (costs current-state) (cost-fn current-state neighbor))
+                old-cost (costs neighbor ##Inf)]
+          :when (< new-cost old-cost)]
+      [neighbor new-cost])))
 
-(defn dijkstra-step [{:keys [neighbors-fn cost-fn frontier cost] :as m}]
+(defn dijkstra-step [{:keys [frontier] :as m}]
   (let [[current-state] (peek frontier)
-        costs (neighbors-with-costs current-state neighbors-fn cost cost-fn)]
+        costs (neighbors-with-costs m)]
     (-> m
         (update-frontier costs)
-        (update :cost into costs)
+        (update :costs into costs)
         (update-visited current-state (map first costs)))))
 
-(defn A-star-step [{:keys [neighbors-fn cost-fn heuristic-fn goal frontier cost] :as m}]
+(defn A-star-step [{:keys [heuristic-fn goal frontier] :as m}]
   (let [[current-state] (peek frontier)
-        costs (neighbors-with-costs current-state neighbors-fn cost cost-fn)
+        costs (neighbors-with-costs m)
         estimates (map (fn [[s c]] [s (+ c (heuristic-fn goal s))]) costs)]
     (-> m
         (update-frontier estimates)
-        (update :cost into costs)
+        (update :costs into costs)
         (update-visited current-state (map first costs)))))
 
 (defn- initialize [{:keys [q cost-fn start] :as m}]
@@ -57,7 +58,7 @@
     (assoc m
       :visited {start nil}
       :frontier (if q (conj q start) (priority-map start 0)))
-    cost-fn (assoc :cost {start 0})))
+    cost-fn (assoc :costs {start 0})))
 
 (defn- search-seq [algorithm-step-fn]
   (fn [initial-conditions]

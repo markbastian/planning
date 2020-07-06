@@ -17,7 +17,7 @@
   (when (and start goal)
     (p/A-star-search
       (assoc m
-        :neighbors (partial u/moore-neigbors grid)
+        :neighbors-fn (partial u/moore-neigbors grid)
         :cost-fn (fn [f t] (* (cost (get-in grid t) ##Inf) (u/euclidian-distance f t)))
         :heuristic-fn u/euclidian-distance))))
 
@@ -47,7 +47,7 @@
     (fn []
       [:svg {:width x :height cell-dim}
        [:rect {:width x :height cell-dim
-               :fill (if (= brush @paintbrush) :gray :white)}]
+               :fill  (if (= brush @paintbrush) :gray :white)}]
        [:text {:x       (* 0.5 (- x cell-dim))
                :y       (* 0.75 cell-dim)
                :onClick #(if-not (= brush @paintbrush)
@@ -69,12 +69,12 @@
       ;https://stackoverflow.com/questions/9251590/prevent-page-scroll-on-drag-in-ios-and-android
       [:div.no-bounce {:style {:cursor :pointer :user-select :none}}
        [:svg#foo {:width        (* cell-dim w)
-              :height       (* cell-dim h)
-              :onTouchStart #(reset! dragging true)
-              :onTouchEnd   #(reset! dragging false)
-              :onMouseDown  #(reset! dragging true)
-              :onMouseUp    #(reset! dragging false)
-              :onMouseLeave #(reset! dragging false)}
+                  :height       (* cell-dim h)
+                  :onTouchStart #(reset! dragging true)
+                  :onTouchEnd   #(reset! dragging false)
+                  :onMouseDown  #(reset! dragging true)
+                  :onMouseUp    #(reset! dragging false)
+                  :onMouseLeave #(reset! dragging false)}
         [:rect {:width (* w cell-dim) :height (* h cell-dim) :fill :green}]
         (render-path state)
         (doall
