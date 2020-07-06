@@ -1,5 +1,6 @@
 (ns planning.grid-search-test
-  (:require [clojure.test :refer :all]
+  (:require #?(:clj  [clojure.test :refer :all]
+               :cljs [cljs.test :refer-macros [deftest is testing run-tests]])
             [planning.utils :as u]
             [planning.core :as p]
             [clojure.pprint :as pp]))

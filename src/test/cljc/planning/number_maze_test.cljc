@@ -2,7 +2,8 @@
   "Number Maze: Given a start and end integer and the ability to move from one
   value to the next with the operations +2, *2, and /2 (if even), what is the
   shortest set of numbers to get from start to end."
-  (:require [clojure.test :refer :all]
+  (:require #?(:clj  [clojure.test :refer :all]
+               :cljs [cljs.test :refer-macros [deftest is testing run-tests]])
             [planning.core :as p]))
 
 (deftest simple-number-maze-test
