@@ -53,11 +53,11 @@
         (update :costs into costs)
         (update-visited current-state (map first costs)))))
 
-(defn- initialize [{:keys [q cost-fn start] :as m}]
+(defn- initialize [{:keys [frontier cost-fn start] :as m}]
   (cond->
     (assoc m
       :visited {start nil}
-      :frontier (if q (conj q start) (priority-map start 0)))
+      :frontier (if frontier (conj frontier start) (priority-map start 0)))
     cost-fn (assoc :costs {start 0})))
 
 (defn- search-seq [algorithm-step-fn]
@@ -66,8 +66,8 @@
          (iterate algorithm-step-fn)
          (take-while (comp seq :frontier)))))
 
-(def breadth-first-seq (comp (search-seq bd-search-step) #(assoc % :q empty-queue)))
-(def depth-first-seq (comp (search-seq bd-search-step) #(assoc % :q [])))
+(def breadth-first-seq (comp (search-seq bd-search-step) #(assoc % :frontier empty-queue)))
+(def depth-first-seq (comp (search-seq bd-search-step) #(assoc % :frontier [])))
 (def dijkstra-seq (search-seq dijkstra-step))
 (def greedy-breadth-first-seq (search-seq greedy-breadth-first-step))
 (def A-star-seq (search-seq A-star-step))

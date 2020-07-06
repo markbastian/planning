@@ -29,16 +29,62 @@ Three families of functions are provided for each algorithm:
 The test directory is a great place to find examples of how to use these algorithms.
 
 Using the planning algorithms is quite simple.
+
 ```clojure
 ;;Pull in the core dependency
 (require '[planning.core :as p])
 
-;;Compute the steps required to go from 200 to 17 by only doubling, adding 2, or halving the input (if even) at each step.
-;;Note that the neighbors function is an unbounded search space (e.g. as opposed to a simple grid).
+;;Compute the steps required to go from 200 to 17 by only 
+;; * doubling
+;; * adding 2
+;; * or halving the input (if even) at each step.
+;;Note that the neighbors function is an unbounded search space 
+;; (e.g. as opposed to a simple grid).
 (p/breadth-first-search
  {:start        200
   :goal         17
   :neighbors-fn (fn [x] (cond-> [(* 2 x) (+ 2 x)] (even? x) (conj (/ x 2))))})
+
+;;Pull in the utility functions
+(require '[planning.utils :as u])
+
+;;You might have a heightmap defined (maybe for a game)
+(def height-map
+  [[1 1 1 1 2 1]
+   [1 1 2 2 2 1]
+   [1 1 5 5 2 1]
+   [1 1 5 5 2 1]
+   [1 2 2 2 2 1]
+   [1 1 1 1 1 1]])
+
+;;Not all algorithms need all keys, but we'll put them all there so we can try 
+;;them all out.
+(def setup
+  {:start        [0 0]
+   :goal         [5 5]
+   :neighbors-fn (partial u/moore-neigbors height-map)
+   :heuristic-fn u/euclidian-distance
+   :cost-fn      (partial u/heightmap-distance height-map)})
+
+(u/mark-path height-map (p/breadth-first-search setup))
+(u/mark-path height-map (p/depth-first-search setup))
+(u/mark-path height-map (p/dijkstra-search setup))
+(u/mark-path height-map (p/greedy-breadth-first-search setup))
+(u/mark-path height-map (p/A-star-search setup))
+
+;;To view the state of any algorithm, you can use the seq fn. For example:
+(->> (p/breadth-first-seq setup)
+     (take 3))
+
+(->> (p/depth-first-seq setup)
+     (take 3))
+
+(->> (p/A-star-seq setup)
+     (take 3))
+
+;;Inspect how a particular algorithm traverses the domain
+(->> (p/A-star-seq setup)
+     (map (comp ffirst :frontier)))
 ```
 
 ## About
