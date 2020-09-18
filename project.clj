@@ -1,5 +1,5 @@
 (defproject
-  markbastian/planning "0.1.1"
+  markbastian/planning "0.1.2-SNAPSHOT"
   :description "A planning library"
   :url "https://github.com/markbastian/planning"
   :scm {:name "git" :url "https://github.com/markbastian/planning"}
