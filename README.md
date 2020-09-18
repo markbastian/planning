@@ -1,4 +1,4 @@
-# Planning
+# Planning [![Clojars Project](https://img.shields.io/clojars/v/markbastian/planning.svg)](https://clojars.org/markbastian/planning)
 
 An implementation of planning algorithms in Clojure.
 
