@@ -1,5 +1,5 @@
 (defproject
-  markbastian/planning "0.1.0-SNAPSHOT"
+  markbastian/planning "0.1.0"
   :description "A planning library"
   :url "https://github.com/markbastian/planning"
   :license {:name "Eclipse Public License"
